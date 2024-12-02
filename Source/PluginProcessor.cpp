@@ -136,6 +136,7 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
+    auto numSamples = buffer.getNumSamples();
 
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
@@ -155,25 +156,24 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* input = buffer.getReadPointer(channel);
-                auto* output = buffer.getWritePointer(channel);
-
-                for (int i = 0; i < buffer.getNumSamples(); ++i)
-                {
-                    // Write to the circular buffer
-                    circularBuffer[writePosition] = input[i];
-
-                    // Read from the circular buffer
-                    output[i] = circularBuffer[playbackPosition];
-
-                    // Update positions with wraparound
-                    writePosition = (writePosition + 1) % bufferSize;
-                    playbackPosition = (playbackPosition + 1) % bufferSize;
-                }
+        auto* output = buffer.getWritePointer(channel);
+         
+        for (int i = 0; i < numSamples; ++i)
+        {
+        // Write to the circular buffer
+        circularBuffer[writePosition] = input[i];
+         
+        // Read from the circular buffer
+        output[i] = circularBuffer[playbackPosition];
+         
+        // Update positions with wraparound
+        writePosition = (writePosition + 1) % bufferSize;
+        playbackPosition = (playbackPosition + 1) % bufferSize;
+        }
     }
-
-            // Clear unused output channels
-            for (int channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
-                buffer.clear(channel, 0, buffer.getNumSamples());
+    // Clear unused output channels
+    for (int channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
+        buffer.clear(channel, 0, numSamples);
 }
 
 //==============================================================================
