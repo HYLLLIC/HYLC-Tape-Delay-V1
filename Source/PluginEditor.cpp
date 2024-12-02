@@ -13,6 +13,13 @@
 HYLC_Tape_Delay_V1AudioProcessorEditor::HYLC_Tape_Delay_V1AudioProcessorEditor (HYLC_Tape_Delay_V1AudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
+    // Configure the slider
+    sliderOne.setSliderStyle(juce::Slider::LinearVertical);
+    sliderOne.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+
+    // Add the slider to the editor
+    addAndMakeVisible(sliderOne);
+
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize (400, 300);
@@ -42,4 +49,7 @@ void HYLC_Tape_Delay_V1AudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
+    
+    // Set the bounds of the slider
+    sliderOne.setBounds(50, 50, 300, 200);
 }

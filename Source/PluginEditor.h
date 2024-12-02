@@ -28,6 +28,8 @@ private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     HYLC_Tape_Delay_V1AudioProcessor& audioProcessor;
+    
+    juce::Slider sliderOne;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HYLC_Tape_Delay_V1AudioProcessorEditor)
 };
