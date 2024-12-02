@@ -52,6 +52,10 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    
+    void setLoopLength(float lengthInSeconds);
+    
+    float getLoopLength() const { return static_cast<float>(bufferSize) / getSampleRate(); }
 
 private:
     std::vector<float> circularBuffer;  // Circular buffer for storing audio

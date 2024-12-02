@@ -207,3 +207,11 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new HYLC_Tape_Delay_V1AudioProcessor();
 }
+
+void HYLC_Tape_Delay_V1AudioProcessor::setLoopLength(float lengthInSeconds)
+{
+    bufferSize = static_cast<int>(getSampleRate() * lengthInSeconds);
+    circularBuffer.resize(bufferSize, 0.0f); // Resize buffer and clear old data
+    writePosition = 0;                       // Reset write position
+    playbackPosition = 0;                    // Reset playback position
+}
