@@ -93,8 +93,10 @@ void HYLC_Tape_Delay_V1AudioProcessor::changeProgramName (int index, const juce:
 //==============================================================================
 void HYLC_Tape_Delay_V1AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    bufferSize = static_cast<int>(sampleRate * 5.0); // 5 seconds of audio
+    circularBuffer.resize(bufferSize, 0.0f);
+    writePosition = 0;
+    playbackPosition = 0;
 }
 
 void HYLC_Tape_Delay_V1AudioProcessor::releaseResources()
@@ -152,10 +154,26 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
     // interleaved by keeping the same state.
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        auto* input = buffer.getReadPointer(channel);
+                auto* output = buffer.getWritePointer(channel);
 
-        // ..do something to the data...
+                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                {
+                    // Write to the circular buffer
+                    circularBuffer[writePosition] = input[i];
+
+                    // Read from the circular buffer
+                    output[i] = circularBuffer[playbackPosition];
+
+                    // Update positions with wraparound
+                    writePosition = (writePosition + 1) % bufferSize;
+                    playbackPosition = (playbackPosition + 1) % bufferSize;
+                }
     }
+
+            // Clear unused output channels
+            for (int channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
+                buffer.clear(channel, 0, buffer.getNumSamples());
 }
 
 //==============================================================================

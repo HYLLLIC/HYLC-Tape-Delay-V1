@@ -54,6 +54,10 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 private:
+    std::vector<float> circularBuffer;  // Circular buffer for storing audio
+        int bufferSize = 0;                 // Size of the circular buffer
+        int writePosition = 0;              // Current write position in the buffer
+        int playbackPosition = 0;           // Current playback position
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HYLC_Tape_Delay_V1AudioProcessor)
 };
