@@ -138,21 +138,27 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
     auto totalNumOutputChannels = getTotalNumOutputChannels();
     auto numSamples = buffer.getNumSamples();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
+    // Clear output channels if more outputs than inputs
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+        buffer.clear(i, 0, numSamples);
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
+    // Simple quiet audio for debugging:
+    /*//Start==============================================================================
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    {
+        auto* output = buffer.getWritePointer(channel);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+            output[i] *= 0.1f; // Simple volume reduction
+    }
+    *///End==============================================================================
+    
+    // The real thing below:
+    //Start==============================================================================
+    // Validate and initialize circular buffer
+    if (circularBuffer.empty() || bufferSize <= 0)
+        return; // Exit if circular buffer is invalid
+
+    // Process audio for each input channel
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* input = buffer.getReadPointer(channel);
@@ -160,17 +166,20 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
          
         for (int i = 0; i < numSamples; ++i)
         {
-        // Write to the circular buffer
-        circularBuffer[writePosition] = input[i];
+            // Write to the circular buffer
+            circularBuffer[writePosition] = input[i];
          
-        // Read from the circular buffer
-        output[i] = circularBuffer[playbackPosition];
+            // Read from the circular buffer
+            float delayedSample = circularBuffer[playbackPosition];
+            output[i] = delayedSample; // Apply delay effect
          
-        // Update positions with wraparound
-        writePosition = (writePosition + 1) % bufferSize;
-        playbackPosition = (playbackPosition + 1) % bufferSize;
+            // Update positions with wraparound
+            writePosition = (writePosition + 1) % bufferSize;
+            playbackPosition = (playbackPosition + 1) % bufferSize;
         }
     }
+    //End==============================================================================
+    
     // Clear unused output channels
     for (int channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
         buffer.clear(channel, 0, numSamples);
