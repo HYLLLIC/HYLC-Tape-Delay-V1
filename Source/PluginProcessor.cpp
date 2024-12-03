@@ -157,20 +157,20 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
 
         for (int i = 0; i < numSamples; ++i)
         {
-            // Get current sample and apply feedback
-            float inputSample = input[i];
-            circularBuffer[writePosition] = inputSample + feedbackAmount * circularBuffer[playbackPosition];
+            // Write to the circular buffer
+            circularBuffer[writePosition] = input[i] + feedbackAmount * circularBuffer[playbackPosition];
 
-            // Read from the circular buffer (apply delay effect)
-            float delayedSample = circularBuffer[playbackPosition];
+            // Read from the circular buffer with interpolation
+            float delayedSample = getInterpolatedSample(playbackPosition);
 
             // Apply wet/dry mix
-            output[i] = (1.0f - wetMix) * inputSample + wetMix * delayedSample;
+            output[i] = (1.0f - wetMix) * input[i] + wetMix * delayedSample;
 
             // Update positions with wraparound
             writePosition = (writePosition + 1) % bufferSize;
-            playbackPosition = (playbackPosition + 1) % bufferSize;
+            playbackPosition = std::fmod(playbackPosition + 1.0f, bufferSize);
         }
+
     }
 
     // Clear unused output channels
@@ -217,4 +217,14 @@ void HYLC_Tape_Delay_V1AudioProcessor::setLoopLength(float lengthInSeconds)
     circularBuffer.resize(bufferSize, 0.0f); // Resize buffer and clear old data
     writePosition = 0;                       // Reset write position
     playbackPosition = 0;                    // Reset playback position
+}
+
+float HYLC_Tape_Delay_V1AudioProcessor::getInterpolatedSample(float playbackPosition)
+{
+    int index1 = static_cast<int>(playbackPosition); // Integer part
+    int index2 = (index1 + 1) % bufferSize;          // Next index, wrapping around
+    float frac = playbackPosition - index1;         // Fractional part
+
+    // Linearly interpolate between two samples
+    return (1.0f - frac) * circularBuffer[index1] + frac * circularBuffer[index2];
 }

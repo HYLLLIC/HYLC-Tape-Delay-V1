@@ -56,6 +56,8 @@ public:
     void setLoopLength(float lengthInSeconds);
     
     float getLoopLength() const { return static_cast<float>(bufferSize) / getSampleRate(); }
+    
+    float getInterpolatedSample(float playbackPosition);
 
 private:
     std::vector<float> circularBuffer;  // Circular buffer for storing audio
