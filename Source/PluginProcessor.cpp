@@ -142,48 +142,42 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear(i, 0, numSamples);
 
-    // Simple quiet audio for debugging:
-    /*//Start==============================================================================
-    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-    {
-        auto* output = buffer.getWritePointer(channel);
-        for (int i = 0; i < buffer.getNumSamples(); ++i)
-            output[i] *= 0.1f; // Simple volume reduction
-    }
-    *///End==============================================================================
-    
-    // The real thing below:
-    //Start==============================================================================
-    // Validate and initialize circular buffer
+    // Validate circular buffer
     if (circularBuffer.empty() || bufferSize <= 0)
-        return; // Exit if circular buffer is invalid
+        return;
+
+    float feedbackAmount = 0.5f; // Feedback amount (e.g., 50%)
+    float wetMix = 0.5f; // Wet/Dry mix (50% wet)
 
     // Process audio for each input channel
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
         auto* input = buffer.getReadPointer(channel);
         auto* output = buffer.getWritePointer(channel);
-         
+
         for (int i = 0; i < numSamples; ++i)
         {
-            // Write to the circular buffer
-            circularBuffer[writePosition] = input[i];
-         
-            // Read from the circular buffer
+            // Get current sample and apply feedback
+            float inputSample = input[i];
+            circularBuffer[writePosition] = inputSample + feedbackAmount * circularBuffer[playbackPosition];
+
+            // Read from the circular buffer (apply delay effect)
             float delayedSample = circularBuffer[playbackPosition];
-            output[i] = delayedSample; // Apply delay effect
-         
+
+            // Apply wet/dry mix
+            output[i] = (1.0f - wetMix) * inputSample + wetMix * delayedSample;
+
             // Update positions with wraparound
             writePosition = (writePosition + 1) % bufferSize;
             playbackPosition = (playbackPosition + 1) % bufferSize;
         }
     }
-    //End==============================================================================
-    
+
     // Clear unused output channels
     for (int channel = totalNumInputChannels; channel < totalNumOutputChannels; ++channel)
         buffer.clear(channel, 0, numSamples);
 }
+
 
 //==============================================================================
 bool HYLC_Tape_Delay_V1AudioProcessor::hasEditor() const
