@@ -146,8 +146,8 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
     if (circularBuffer.empty() || bufferSize <= 0)
         return;
 
-    float feedbackAmount = 0.5f; // Feedback amount (e.g., 50%)
-    float wetMix = 0.5f; // Wet/Dry mix (50% wet)
+    float feedbackAmount = 0.4f; // Feedback amount (e.g., 40%)
+    float wetMix = 0.9f; // Wet/Dry mix (90% wet)
 
     // Process audio for each input channel
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
@@ -158,7 +158,7 @@ void HYLC_Tape_Delay_V1AudioProcessor::processBlock (juce::AudioBuffer<float>& b
         for (int i = 0; i < numSamples; ++i)
         {
             // Write to the circular buffer
-            circularBuffer[writePosition] = input[i] + feedbackAmount * circularBuffer[playbackPosition];
+            circularBuffer[writePosition] = juce::jlimit(-1.0f, 1.0f, input[i] + feedbackAmount * circularBuffer[playbackPosition]);
 
             // Read from the circular buffer with interpolation
             float delayedSample = getInterpolatedSample(playbackPosition);
